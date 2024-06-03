@@ -1,0 +1,34 @@
+#include<iostream>
+
+using namespace std;
+
+int main(int argc, char const *argv[])
+{
+    int row_c;
+    cin>>row_c;
+
+    int i = 0;
+
+    while (i<row_c)
+    {
+        int space_count = row_c;
+        while (space_count>i)
+        {
+            cout<<" ";
+            space_count = space_count - 1;
+        }
+
+        int s = 0;
+
+        while (s<=i)
+        {
+            cout<<i+1;
+            s = s + 1;
+        }
+        cout<<endl;
+        i = i+1;
+        
+    }
+    
+    return 0;
+}
