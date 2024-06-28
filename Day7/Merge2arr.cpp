@@ -3,7 +3,7 @@
 
 using namespace std;
 
-void merge(int arr1[], int arr2[], int n, int m)
+void merge(int nums1[], int nums2[], int n, int m)
 {
     int i = 0, j=0;
     int k = 0;
@@ -12,15 +12,15 @@ void merge(int arr1[], int arr2[], int n, int m)
 
     while (i<n && j<m)
     {
-            if(arr1[i]<arr2[j])
+            if(nums1[i]<nums2[j])
             {
-                ans[k++] = arr1[i++];
+                ans[k++] = nums1[i++];
             }
 
       
             else
             {
-                ans[k++] = arr2[j++];
+                ans[k++] = nums2[j++];
                 
             }
             
@@ -28,12 +28,12 @@ void merge(int arr1[], int arr2[], int n, int m)
 
     while (i<n)
     {
-        ans[k++] = arr1[i++];
+        ans[k++] = nums1[i++];
     }
 
     while (j<m)
     {
-        ans[k++] = arr2[j++];
+        ans[k++] = nums2[j++];
     }
     
     cout<<"The sorted array is: "<< endl;
