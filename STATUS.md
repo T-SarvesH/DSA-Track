@@ -13,3 +13,5 @@ Day 6(15th June)- Introduction to various Sorting Techniques like Bubble Sort, S
 Day 7(24th June)- Insertion sort technique its advantages, and its complexities. Solved some relevant interview problems. Introduction to C++ STL and solved some more questions (basic and median level) on arrays, sorting and two pointer approach. Status- Completed.
 
 Day 8 (25, 26 June)- Introduction to character arrays and strings in C++, along with string functions as well. Learnt some character functions along with string vectors as well. Solved a lot of Leetcode problems to further enhance my problem solving-skills and to practice about string manipulation techniques. Status- Completed
+
+Day 9 (28, 29 June)- Introduction of 2D arrays (Matrix) and solved some Leetcode questions related to it. Status- Completed
