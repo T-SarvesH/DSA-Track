@@ -15,3 +15,5 @@ Day 7(24th June)- Insertion sort technique its advantages, and its complexities.
 Day 8 (25, 26 June)- Introduction to character arrays and strings in C++, along with string functions as well. Learnt some character functions along with string vectors as well. Solved a lot of Leetcode problems to further enhance my problem solving-skills and to practice about string manipulation techniques. Status- Completed
 
 Day 9 (28, 29 June)- Introduction of 2D arrays (Matrix) and solved some Leetcode questions related to it. Status- Completed
+
+Day 10 (10th July)- Mathematics Required for DSA, Euclid's algorithm, Sieve, Modular Arithmetics. Solved some Leetcode questions as well.
