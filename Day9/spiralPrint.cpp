@@ -4,44 +4,55 @@
 
 using namespace std;
 
-void spiralPrint(int arr[][3],int rows, int cols)
+void spiralPrint(vector<vector<int>> &arr,int rows, int cols)
 {
-    int newRow = 0;
-    int newCol = 3;
-
-
-    for (int i = 0; i <= newRow; i++)
+	
+    int maxRow = rows, maxCol=cols, i=0, j=0;
+    //Iteration 1
+    for (i = 0; i <= rows-cols; i++)
     {
-        for (int j = 0; j < cols; j++)
+        for (j = 0; j < maxCol; j++)
         {
-            cout<<arr[i][j];
+            cout<<arr[i][j] << " ";
         }   
     }
 
-    newCol--;
-    newRow++;
+    maxCol--;
+    maxRow--;
 
-    for (int i = newRow; i < rows; i++)
+    for (i = 1; i <= maxRow; i++)
     {
-        for(int j = newCol; j< cols; j++)
-        cout<<arr[i][j];
+        for(j = maxCol; j <= maxCol; j++)
+        cout<<arr[i][j] << " ";
     }
 
-     newCol--;
-    
-    // for (int i = newCol; i >=0; i--)
-    // {
-    //     for(int j = newCol-1; j>=0; j--)
-    //     cout<<arr[i][j];
-    // }
-    
-    
+        for (int i = maxCol-1; i<=maxRow; i++)
+     {
+         for(int j = maxCol-1; j>=0; j++)
+         cout<<arr[i][j];
+    }
+	
+    maxRow--;
+
+    for(int i=maxRow+1; i > maxCol-1; i--){
+	
+	    for(int j=maxCol; j>=0; j--)	   
+             cout << arr[i][j];
+    }
+
+    maxCol--;
+
+    for(; i<maxCol; i++){
+	
+	    for(j=maxRow; j<=maxCol; j++)
+            cout << arr[i][j];
+    }
     
 }
 
 int main(int argc, char const *argv[])
 {
-    int arr[3][3];
+    vector<vector<int>> arr(3, vector<int>(3));
     
     for (int i = 0; i < 3; i++)
     {
@@ -52,7 +63,9 @@ int main(int argc, char const *argv[])
         
     }
     
-    spiralPrint(arr, 3, 3);
+    int rows = arr.size();
+    int cols = arr[0].size();
+    spiralPrint(arr, rows, cols);
 
     return 0;
 }
