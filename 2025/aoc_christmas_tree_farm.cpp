@@ -5,18 +5,16 @@
 #include <algorithm>
 #include <set>
 #include <map>
-#include <queue>
 
 using namespace std;
+
+// --- Data Structures ---
 
 struct Point {
     int r, c;
     bool operator<(const Point& other) const {
         if (r != other.r) return r < other.r;
         return c < other.c;
-    }
-    bool operator==(const Point& other) const {
-        return r == other.r && c == other.c;
     }
 };
 
@@ -31,27 +29,33 @@ struct Shape {
     vector<ShapeVariant> variants;
 };
 
+// Global storage for shape definitions
 map<int, Shape> all_shapes;
+const int GAP_ID = 1000000; 
 
+// --- Helpers ---
+
+// Normalize coordinates to (0,0) based on top-leftmost cell
 ShapeVariant normalize(vector<Point>& pts) {
     if (pts.empty()) return {0, 0, {}};
-    int min_r = pts[0].r, min_c = pts[0].c;
-    for (const auto& p : pts) {
-        if (p.r < min_r) min_r = p.r;
-        if (p.c < min_c) min_c = p.c;
-    }
+    sort(pts.begin(), pts.end());
+    
+    int r_offset = pts[0].r;
+    int c_offset = pts[0].c;
+    
     int max_r = 0, max_c = 0;
     for (auto& p : pts) {
-        p.r -= min_r;
-        p.c -= min_c;
+        p.r -= r_offset;
+        p.c -= c_offset;
         if (p.r > max_r) max_r = p.r;
         if (p.c > max_c) max_c = p.c;
     }
-    sort(pts.begin(), pts.end());
     return {max_r + 1, max_c + 1, pts};
 }
 
+// Pre-calculate all 8 symmetries (rotations/flips)
 void generate_variants(Shape& s, const vector<string>& raw_grid) {
+    if (raw_grid.empty()) return;
     vector<Point> base_points;
     for (int r = 0; r < raw_grid.size(); ++r) {
         for (int c = 0; c < raw_grid[r].size(); ++c) {
@@ -62,133 +66,125 @@ void generate_variants(Shape& s, const vector<string>& raw_grid) {
 
     set<vector<Point>> seen;
     vector<Point> current = base_points;
-    for (int rot = 0; rot < 4; ++rot) {
-        vector<Point> flipped = current;
-        for (auto& p : flipped) p.c = -p.c;
-        
-        ShapeVariant v1 = normalize(current);
-        if (seen.find(v1.cells) == seen.end()) {
-            seen.insert(v1.cells);
-            s.variants.push_back(v1);
+    
+    for (int flip = 0; flip < 2; ++flip) {
+        for (int rot = 0; rot < 4; ++rot) {
+            ShapeVariant v = normalize(current);
+            if (seen.find(v.cells) == seen.end()) {
+                seen.insert(v.cells);
+                s.variants.push_back(v);
+            }
+            // Rotate 90 degrees: (r, c) -> (c, -r)
+            for (auto& p : current) {
+                int tmp = p.r;
+                p.r = p.c;
+                p.c = -tmp;
+            }
         }
-
-        ShapeVariant v2 = normalize(flipped);
-        if (seen.find(v2.cells) == seen.end()) {
-            seen.insert(v2.cells);
-            s.variants.push_back(v2);
-        }
-
-        for (auto& p : current) {
-            int tmp = p.r;
-            p.r = p.c;
-            p.c = -tmp;
-        }
+        // Flip horizontally
+        for (auto& p : current) p.c = -p.c;
     }
 }
 
+// --- Solver ---
+
 struct Solver {
     int W, H;
-    vector<vector<bool>> grid;
-    vector<int> presents_to_place; 
-    int total_presents;
-    int min_present_area;
+    // Use char instead of bool to avoid vector<bool> proxy issues and potential corruption
+    vector<vector<char>> grid; 
+    map<int, int> available_counts; 
+    int total_remaining_pieces;
 
-    Solver(int w, int h, vector<int>& p_ids) : W(w), H(h), presents_to_place(p_ids) {
-        grid.assign(H, vector<bool>(W, false));
-        total_presents = p_ids.size();
-        min_present_area = 1e9;
-        for(int id : p_ids) {
-             min_present_area = min(min_present_area, all_shapes[id].area);
+    Solver(int w, int h, const vector<int>& p_ids) : W(w), H(h) {
+        grid.assign(H, vector<char>(W, 0));
+        
+        long long presents_area = 0;
+        for (int id : p_ids) {
+            available_counts[id]++;
+            presents_area += all_shapes[id].area;
+        }
+        total_remaining_pieces = p_ids.size();
+
+        // Calculate slack space and add "Gap" pieces (1x1 squares)
+        // This converts the problem into an Exact Cover problem
+        long long slack = ((long long)W * H) - presents_area;
+        if (slack > 0) {
+            available_counts[GAP_ID] = (int)slack;
+            total_remaining_pieces += (int)slack;
         }
     }
 
-    bool check_connectivity(int required_area) {
-        vector<vector<bool>> visited = grid; 
-        int useful_empty_area = 0;
+    // Heuristic: Always target the first empty cell (top-left)
+    bool find_first_empty(int& r, int& c) {
+        for (r = 0; r < H; ++r) {
+            for (c = 0; c < W; ++c) {
+                if (grid[r][c] == 0) return true;
+            }
+        }
+        return false;
+    }
 
-        for (int r = 0; r < H; ++r) {
-            for (int c = 0; c < W; ++c) {
-                if (!visited[r][c]) {
-                    int island_size = 0;
-                    queue<pair<int,int>> q;
-                    q.push({r, c});
-                    visited[r][c] = true;
-                    island_size++;
-                    
-                    while(!q.empty()){
-                        auto [cr, cc] = q.front();
-                        q.pop();
-                        
-                        int dr[] = {0,0,1,-1};
-                        int dc[] = {1,-1,0,0};
-                        
-                        for(int i=0; i<4; ++i){
-                            int nr = cr + dr[i];
-                            int nc = cc + dc[i];
-                            if(nr>=0 && nr<H && nc>=0 && nc<W && !visited[nr][nc]){
-                                visited[nr][nc] = true;
-                                island_size++;
-                                q.push({nr, nc});
-                            }
+    bool solve() {
+        if (total_remaining_pieces == 0) return true;
+
+        int r, c;
+        if (!find_first_empty(r, c)) return true; // No empty cells left
+
+        // Optimization: Try to fill this specific cell (r,c) using any available shape type.
+        for (auto& [id, count] : available_counts) {
+            if (count > 0) {
+                const Shape& shape = all_shapes[id];
+                
+                for (const auto& var : shape.variants) {
+                    // Quick Bounding Box Check (Optimization)
+                    if (r + var.h > H || c + var.w > W) continue;
+
+                    // Detailed Collision Check
+                    // Variant is normalized to (0,0), so we check if placing it at (r,c) is valid
+                    bool fits = true;
+                    for (const auto& p : var.cells) {
+                        int nr = r + p.r;
+                        int nc = c + p.c;
+                        // Strict bounds check to prevent heap corruption
+                        if (nr < 0 || nr >= H || nc < 0 || nc >= W || grid[nr][nc] != 0) {
+                            fits = false;
+                            break;
                         }
                     }
-                    
-                    if (island_size >= min_present_area) {
-                        useful_empty_area += island_size;
+
+                    if (fits) {
+                        // Place Piece
+                        for (const auto& p : var.cells) grid[r + p.r][c + p.c] = 1;
+                        count--;
+                        total_remaining_pieces--;
+
+                        // Recurse
+                        if (solve()) return true;
+
+                        // Backtrack (Remove Piece)
+                        total_remaining_pieces++;
+                        count++;
+                        for (const auto& p : var.cells) grid[r + p.r][c + p.c] = 0;
                     }
                 }
             }
         }
-        
-        return useful_empty_area >= required_area;
-    }
-
-    bool backtrack(int idx, int prev_pos_index) {
-        if (idx == total_presents) return true;
-
-        int shape_id = presents_to_place[idx];
-        const Shape& shape = all_shapes[shape_id];
-
-        int remaining_area = 0;
-        for(int i=idx; i<total_presents; ++i) remaining_area += all_shapes[presents_to_place[i]].area;
-
-        if (!check_connectivity(remaining_area)) return false;
-
-        int start_pos = 0;
-        if (idx > 0 && presents_to_place[idx] == presents_to_place[idx-1]) {
-            start_pos = prev_pos_index; 
-        }
-
-        for (int pos = start_pos; pos < W * H; ++pos) {
-            int r0 = pos / W;
-            int c0 = pos % W;
-
-            if (grid[r0][c0]) continue;
-
-            for (const auto& var : shape.variants) {
-                if (r0 + var.h > H || c0 + var.w > W) continue;
-
-                bool fits = true;
-                for (const auto& p : var.cells) {
-                    if (grid[r0 + p.r][c0 + p.c]) {
-                        fits = false;
-                        break;
-                    }
-                }
-
-                if (fits) {
-                    for (const auto& p : var.cells) grid[r0 + p.r][c0 + p.c] = true;
-                    if (backtrack(idx + 1, pos)) return true;
-                    for (const auto& p : var.cells) grid[r0 + p.r][c0 + p.c] = false;
-                }
-            }
-        }
-
         return false;
     }
 };
 
 int main() {
+    // Fast I/O
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    // Initialize 1x1 Gap Shape manually
+    Shape gap_shape;
+    gap_shape.id = GAP_ID;
+    gap_shape.area = 1;
+    gap_shape.variants.push_back({1, 1, {{0,0}}});
+    all_shapes[GAP_ID] = gap_shape;
+
     string line;
     vector<string> shape_buffer;
     int current_shape_id = -1;
@@ -204,6 +200,7 @@ int main() {
             continue;
         }
 
+        // Detect Shape Header "N:"
         if (line.find(':') != string::npos && line.find('x') == string::npos) {
             if (!shape_buffer.empty() && current_shape_id != -1) {
                 all_shapes[current_shape_id].id = current_shape_id;
@@ -212,7 +209,9 @@ int main() {
             }
             current_shape_id = stoi(line.substr(0, line.find(':')));
         }
+        // Detect Query "WxH: ..."
         else if (line.find("x") != string::npos && line.find(':') != string::npos) {
+            // Flush any remaining shape buffer before processing query
             if (!shape_buffer.empty() && current_shape_id != -1) {
                 all_shapes[current_shape_id].id = current_shape_id;
                 generate_variants(all_shapes[current_shape_id], shape_buffer);
@@ -241,16 +240,11 @@ int main() {
                 s_idx++;
             }
 
-            if (req_area > (long long)W * H) {
-                continue; 
-            }
-
-            sort(p_ids.begin(), p_ids.end(), [](int a, int b) {
-                return all_shapes[a].area > all_shapes[b].area;
-            });
+            // Pruning: If presents area > grid area, it's impossible.
+            if (req_area > (long long)W * H) continue;
 
             Solver solver(W, H, p_ids);
-            if (solver.backtrack(0, 0)) {
+            if (solver.solve()) {
                 total_successes++;
             }
         }
@@ -259,11 +253,12 @@ int main() {
         }
     }
     
+    // Process final shape if file ends without newline
     if (!shape_buffer.empty() && current_shape_id != -1) {
          generate_variants(all_shapes[current_shape_id], shape_buffer);
     }
 
-    cout << "Answer: " << total_successes << endl;
+    cout << total_successes << endl;
 
     return 0;
 }
