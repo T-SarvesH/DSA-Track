@@ -1,4 +1,4 @@
-//P3: Twin Word Check
+//P3: Twin Word Check (Method 2 using sorting)
 
 #include<bits/stdc++.h>
 #define ll long long
@@ -15,41 +15,25 @@
 using namespace std;
 
 // Templates 
-template<typename T> T my_max(T x, T y){
-	
+template<typename T> T my_max(T x, T y){	
 	return x >= y? x: y;
 }
 
 template<typename T> T my_min(T x, T y){
-	
 	return x >= y? y: x;
 }
 
 //Some custom functions
 bool helper(string &s, string &t){
-	
-	int n = s.sz(), m = t.sz();
-	if(m!=n) return false;
 
-	v<int> f1(26, 0); v<int> f2(26, 0);
-
-	for(int i=0; i<n; ++i){
-		f1[s[i] - 'a']++; f2[t[i] - 'a']++;
-	}
-	
-	for(int i=0; i<26; ++i){
-		
-		if(f1[i] != f2[i])
-		return false;
-	}
-
-	return true;
+	sort(s.begin(), s.end()); sort(t.begin(), t.end());
+	return s==t;
 }
 
 int main(){
+
 	string s, t;
 	getline(cin, s); getline(cin, t);
-
 	cout << (helper(s, t)? "true": "false") << endl;
 	return 0;
 }

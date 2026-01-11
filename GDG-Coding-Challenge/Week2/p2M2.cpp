@@ -1,4 +1,4 @@
-//P2: Alphabet scan
+//P2: Alphabet scan (Method 2)
 #include<bits/stdc++.h>
 #define ll long long
 #define li long int
@@ -14,39 +14,38 @@
 using namespace std;
 
 // Templates 
-template<typename T> T my_max(T x, T y){
-	
+template<typename T> T my_max(T x, T y){	
 	return x >= y? x: y;
 }
 
 template<typename T> T my_min(T x, T y){
-	
 	return x >= y? y: x;
 }
 
 //Some custom functions
 void helper(string &s){
 	
-	//Using a Frequency array of size 26
-	v<int> freq(26, 0);
+	v<pair<char, int>> res;
 	int unique=0;
 
-	for(char &cs: s){
+	for(char c='a'; c<='z'; ++c){
 		
-		freq[cs - 'a']++;
-		if(freq[cs - 'a'] == 1)
-			++unique;
+		int uniFreq=0;
+		for(char &cs: s)
+		uniFreq += (cs == c);
+
+		if(uniFreq > 0){
+			unique++;
+			res.pb({c, uniFreq});
+		}
 	}
 
 	cout << unique << endl;
-	[](v<int> &freq){
+	[](v<pair<char, int>> &v){
 		
-		for(int i=0; i<26; ++i){
-			
-			if(freq[i])
-			cout << char('a' + i) << ":" << freq[i] << " ";
-		}
-	}(freq);
+		for(auto[c, freq]: v)
+		cout << c << ":" << freq << " ";
+	}(res);
 }
 
 int main(){
