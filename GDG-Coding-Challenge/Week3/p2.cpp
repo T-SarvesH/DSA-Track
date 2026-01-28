@@ -1,3 +1,5 @@
+//Circular Encryption (P2)
+
 #include<bits/stdc++.h>
 #define ll long long
 #define li long int
@@ -49,7 +51,17 @@ v<int> helper(int &n, int &k, v<int> &arr){
 	}
 	else{
 		k = abs(k) % n;
-		//for(int i=0; i<n; ++i)
+		for(int i=0; i<n; ++i){
+
+			//If no roundabout
+			if(i >= k)
+			ans.pb(prefd[i-1] - (i - k > 0 ? prefd[i-k-1] : 0));
+			
+			//If a roundabout exists
+			else
+			ans.pb(((i > 0) ? prefd[i-1] : 0) + (prefd[n-1] - prefd[n-1-(k-i)]));
+			
+		}
 	}
 
 	return ans;
