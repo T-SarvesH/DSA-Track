@@ -1,0 +1,91 @@
+#include<bits/stdc++.h>
+#define ll long long
+#define li long int
+#define pb push_back
+#define pob pop_back
+#define sz size
+#define v vector
+#define ump unordered_map
+#define mp map
+#define uset unordered_set
+#define oset ordered_set
+
+using namespace std;
+
+// Templates 
+template<typename T> T my_max(T x, T y){	
+	return x >= y? x: y;
+}
+
+template<typename T> T my_min(T x, T y){	
+	return x >= y? y: x;
+}
+
+//Some custom functions
+void helper(vector<vector<ll>> &testcases, vector<ll> &ans){
+	
+	ll a, b, maxi;
+	for(auto &t: testcases){
+		
+		a = t[0], b = t[1], maxi = -1;
+		
+		// If b is already one just push the value of a+b if even
+		if(b == 1){
+			
+			ans.push_back(((a+b)%2==0)? (a+b): -1);
+			continue;
+		}
+
+		//Find all divisors of b
+		vector<ll> divisors;
+		for(ll i=2; i*i<=b; ++i){
+		
+			if(b % i == 0)	{
+				divisors.push_back(i); 
+				
+				if(b / i != i)
+				divisors.push_back(b / i);
+			}
+		}
+		divisors.push_back(b);
+	
+		//Check for each divisor
+		for(ll &d: divisors){
+		
+			ll curr;
+			
+			if(b % d == 0){
+				curr = (a * d) + (b / d);
+				if(curr % 2 == 0)
+					maxi = max(curr, maxi);	
+			}
+		}
+	
+		ans.push_back(maxi);
+	
+	}
+	for(auto &a: ans)
+		cout << a << endl;
+
+	return;
+}
+
+int main(){
+	
+	int n;
+	cin >> n;
+	
+	ll a, b;
+
+	vector<vector<ll>> testcases;
+	vector<ll> ans;
+
+	for(int i=0; i<n; ++i){
+	
+		cin >> a >> b;
+		testcases.push_back({a, b});
+	}
+	
+	helper(testcases, ans);
+	return 0;
+}
